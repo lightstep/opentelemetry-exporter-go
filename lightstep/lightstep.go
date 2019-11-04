@@ -84,8 +84,8 @@ func (e *Exporter) Close() {
 	e.tracer.Close(context.Background())
 }
 
-// Flush flushes all spans in the tracer.
-// You should call this to flush spans to LightStep without closing the underlying tracer.
+// Flush forces all unflushed to flush.
+// This is normally handled by the exporter. However, you may call this to explicitly flush all spans without closing the exporter.
 func (e *Exporter) Flush() {
 	e.tracer.Flush(context.Background())
 }
