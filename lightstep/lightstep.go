@@ -40,7 +40,7 @@ func marshalConfigToOptions(c Config) ls.Options {
 	opts.Collector.Host = c.Host
 	opts.Collector.Port = c.Port
 	opts.Collector.Plaintext = false
-	opts.Initialize()
+
 	return opts
 }
 
@@ -48,6 +48,11 @@ func marshalConfigToOptions(c Config) ls.Options {
 func NewExporter(config Config) (*Exporter, error) {
 	tracerOptions := marshalConfigToOptions(config)
 	tracer := ls.NewTracer(tracerOptions)
+
+	opts := tracer.Options()
+	if err := opts.Validate(); err != nil {
+		return nil, err
+	}
 
 	return &Exporter{
 		tracer: tracer,
