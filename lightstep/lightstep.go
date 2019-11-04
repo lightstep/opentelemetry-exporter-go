@@ -109,13 +109,11 @@ func lightStepSpan(data *export.SpanData) *ls.RawSpan {
 }
 
 func convertTraceID(id core.TraceID) uint64 {
-	first := binary.LittleEndian.Uint64(id[:8])
-	second := binary.LittleEndian.Uint64(id[8:])
-	return first ^ second
+	return binary.BigEndian.Uint64(id[:8])
 }
 
 func convertSpanID(id core.SpanID) uint64 {
-	return binary.LittleEndian.Uint64(id[:])
+	return binary.BigEndian.Uint64(id[:])
 }
 
 func toLogRecords(input []export.Event) []opentracing.LogRecord {
