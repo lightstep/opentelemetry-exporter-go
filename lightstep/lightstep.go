@@ -9,7 +9,6 @@ import (
 
 	"go.opentelemetry.io/otel/api/core"
 	"go.opentelemetry.io/otel/sdk/export"
-	"go.opentelemetry.io/otel/sdk/trace"
 
 	"github.com/opentracing/opentracing-go"
 
@@ -55,13 +54,6 @@ func NewExporter(config Config) (*Exporter, error) {
 	}, nil
 }
 
-func (e *Exporter) RegisterSimpleSpanProcessor() {
-	e.once.Do(func() {
-		ssp := trace.NewSimpleSpanProcessor(e)
-		trace.RegisterSpanProcessor(ssp)
-	})
-}
-
 // ExportSpan exports an OpenTelementry SpanData object to an OpenTracing Span on the LightStep tracer.
 func (e *Exporter) ExportSpan(ctx context.Context, data *export.SpanData) {
 	e.tracer.StartSpan(
@@ -79,10 +71,18 @@ func (e *Exporter) ExportSpan(ctx context.Context, data *export.SpanData) {
 	)
 }
 
-// Close flushes all spans in the tracer to LightStep.
+var _ export.SpanSyncer = (*Exporter)(nil)
+
+// Close flushes all spans in the tracer to LightStep and then closes the tracer.
 // You should call Close() before your application exits.
 func (e *Exporter) Close() {
 	e.tracer.Close(context.Background())
+}
+
+// Flush flushes all spans in the tracer.
+// You should call this to flush spans to LightStep without closing the underlying tracer.
+func (e *Exporter) Flush() {
+	e.tracer.Flush(context.Background())
 }
 
 // this replicates StartSpan behavior for testing
