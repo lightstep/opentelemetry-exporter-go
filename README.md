@@ -4,11 +4,11 @@ This is an experimental exporter for opentelemetry-go.
 
 ## Initialize
 ```go
-exporter := lightstep.NewExporter(lightstep.Config{
-    accessToken: <PROJECT_ACCESS_TOKEN>,
-    host: <SATELLITE_URL>,
-    port: <SATELLITE_PORT>,
-    serviceName: "my-service",
+exporter := lightstep.NewExporter([]lightstep.Option{
+    lightstep.WithAccessToken(<PROJECT_ACCESS_TOKEN>),
+    lightstep.WithHost(<SATELLITE_URL>),
+    lightstep.WithPort(<SATELLITE_PORT>),
+    lightstep.WithServiceName("my-service"),
 })
 
 defer exporter.Close()
