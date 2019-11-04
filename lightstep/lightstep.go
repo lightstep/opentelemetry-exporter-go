@@ -15,17 +15,49 @@ import (
 	ls "github.com/lightstep/lightstep-tracer-go"
 )
 
-// Config is a set of configuration options for LightStep.
-type Config struct {
-	// AccessToken is your LightStep project access token.
-	// It can be found in the 'Settings' page for your project.
-	AccessToken string
-	// Host is the hostname for your LightStep Satellite(s).
-	Host string
-	// Port is the port number for your LightStep Satellite(s).
-	Port int
-	// ServiceName is an identifier for your application. This is displayed in the service directory.
-	ServiceName string
+type Option func(*config)
+
+func WithAccessToken(accessToken string) Option {
+	return func(c *config) {
+		c.options.AccessToken = accessToken
+	}
+}
+
+func WithHost(host string) Option {
+	return func(c *config) {
+		c.options.Collector.Host = host
+	}
+}
+
+func WithPort(port int) Option {
+	return func(c *config) {
+		c.options.Collector.Port = port
+	}
+}
+
+func WithServiceName(serviceName string) Option {
+	return func(c *config) {
+		if c.options.Tags == nil {
+			c.options.Tags = make(map[string]interface{})
+		}
+
+		c.options.Tags[ls.ComponentNameKey] = serviceName
+	}
+}
+
+type config struct {
+	options ls.Options
+}
+
+func newConfig(opts ...Option) config {
+	var c config
+	var defaultOpts []Option
+
+	for _, opt := range append(defaultOpts, opts...) {
+		opt(&c)
+	}
+
+	return c
 }
 
 // Exporter is an implementation of trace.Exporter that sends spans to LightStep.
@@ -34,20 +66,10 @@ type Exporter struct {
 	tracer ls.Tracer
 }
 
-func marshalConfigToOptions(c Config) ls.Options {
-	opts := ls.Options{}
-	opts.AccessToken = c.AccessToken
-	opts.Collector.Host = c.Host
-	opts.Collector.Port = c.Port
-	opts.Collector.Plaintext = false
-
-	return opts
-}
-
 // NewExporter is an implementation of trace.Exporter that sends spans to LightStep.
-func NewExporter(config Config) (*Exporter, error) {
-	tracerOptions := marshalConfigToOptions(config)
-	tracer := ls.NewTracer(tracerOptions)
+func NewExporter(opts ...Option) (*Exporter, error) {
+	c := newConfig(opts...)
+	tracer := ls.NewTracer(c.options)
 
 	opts := tracer.Options()
 	if err := opts.Validate(); err != nil {
