@@ -71,6 +71,11 @@ func NewExporter(opts ...Option) (*Exporter, error) {
 	c := newConfig(opts...)
 	tracer := ls.NewTracer(c.options)
 
+	opts := tracer.Options()
+	if err := opts.Validate(); err != nil {
+		return nil, err
+	}
+
 	return &Exporter{
 		tracer: tracer,
 	}, nil
@@ -101,8 +106,8 @@ func (e *Exporter) Close() {
 	e.tracer.Close(context.Background())
 }
 
-// Flush flushes all spans in the tracer.
-// You should call this to flush spans to LightStep without closing the underlying tracer.
+// Flush forces all unflushed to flush.
+// This is normally handled by the exporter. However, you may call this to explicitly flush all spans without closing the exporter.
 func (e *Exporter) Flush() {
 	e.tracer.Flush(context.Background())
 }
@@ -126,13 +131,11 @@ func lightStepSpan(data *export.SpanData) *ls.RawSpan {
 }
 
 func convertTraceID(id core.TraceID) uint64 {
-	first := binary.LittleEndian.Uint64(id[:8])
-	second := binary.LittleEndian.Uint64(id[8:])
-	return first ^ second
+	return binary.BigEndian.Uint64(id[:8])
 }
 
 func convertSpanID(id core.SpanID) uint64 {
-	return binary.LittleEndian.Uint64(id[:])
+	return binary.BigEndian.Uint64(id[:])
 }
 
 func toLogRecords(input []export.Event) []opentracing.LogRecord {
