@@ -2,6 +2,9 @@
 
 This is an experimental exporter for opentelemetry-go.
 
+## Docs
+https://godoc.org/github.com/lightstep/opentelemetry-exporter-go/lightstep
+
 ## Initialize
 ```go
 exporter := lightstep.NewExporter([]lightstep.Option{
