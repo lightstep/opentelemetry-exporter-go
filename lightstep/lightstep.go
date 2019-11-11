@@ -71,8 +71,8 @@ func NewExporter(opts ...Option) (*Exporter, error) {
 	c := newConfig(opts...)
 	tracer := ls.NewTracer(c.options)
 
-	opts := tracer.Options()
-	if err := opts.Validate(); err != nil {
+	checkOptions := tracer.Options()
+	if err := checkOptions.Validate(); err != nil {
 		return nil, err
 	}
 
