@@ -15,27 +15,27 @@ import (
 	ls "github.com/lightstep/lightstep-tracer-go"
 )
 
-type ExporterOption func(*config)
+type Option func(*config)
 
-func WithAccessToken(accessToken string) ExporterOption {
+func WithAccessToken(accessToken string) Option {
 	return func(c *config) {
 		c.options.AccessToken = accessToken
 	}
 }
 
-func WithHost(host string) ExporterOption {
+func WithHost(host string) Option {
 	return func(c *config) {
 		c.options.Collector.Host = host
 	}
 }
 
-func WithPort(port int) ExporterOption {
+func WithPort(port int) Option {
 	return func(c *config) {
 		c.options.Collector.Port = port
 	}
 }
 
-func WithServiceName(serviceName string) ExporterOption {
+func WithServiceName(serviceName string) Option {
 	return func(c *config) {
 		if c.options.Tags == nil {
 			c.options.Tags = make(map[string]interface{})
@@ -49,9 +49,9 @@ type config struct {
 	options ls.Options
 }
 
-func newConfig(opts ...ExporterOption) config {
+func newConfig(opts ...Option) config {
 	var c config
-	var defaultOpts []ExporterOption
+	var defaultOpts []Option
 
 	for _, opt := range append(defaultOpts, opts...) {
 		opt(&c)
@@ -67,12 +67,12 @@ type Exporter struct {
 }
 
 // NewExporter is an implementation of trace.Exporter that sends spans to LightStep.
-func NewExporter(opts ...ExporterOption) (*Exporter, error) {
+func NewExporter(opts ...Option) (*Exporter, error) {
 	c := newConfig(opts...)
 	tracer := ls.NewTracer(c.options)
 
-	tracerOptions := tracer.Options()
-	if err := tracerOptions.Validate(); err != nil {
+	opts := tracer.Options()
+	if err := opts.Validate(); err != nil {
 		return nil, err
 	}
 
