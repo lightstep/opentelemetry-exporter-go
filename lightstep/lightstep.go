@@ -8,7 +8,7 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 
 	"go.opentelemetry.io/otel/api/core"
-	"go.opentelemetry.io/otel/sdk/export"
+	"go.opentelemetry.io/otel/sdk/export/trace"
 
 	"github.com/opentracing/opentracing-go"
 
@@ -82,7 +82,7 @@ func NewExporter(opts ...Option) (*Exporter, error) {
 }
 
 // ExportSpan exports an OpenTelementry SpanData object to an OpenTracing Span on the LightStep tracer.
-func (e *Exporter) ExportSpan(ctx context.Context, data *export.SpanData) {
+func (e *Exporter) ExportSpan(ctx context.Context, data *trace.SpanData) {
 	e.tracer.StartSpan(
 		data.Name,
 		ls.SetTraceID(convertTraceID(data.SpanContext.TraceID)),
@@ -98,7 +98,7 @@ func (e *Exporter) ExportSpan(ctx context.Context, data *export.SpanData) {
 	)
 }
 
-var _ export.SpanSyncer = (*Exporter)(nil)
+var _ trace.SpanSyncer = (*Exporter)(nil)
 
 // Close flushes all spans in the tracer to LightStep and then closes the tracer.
 // You should call Close() before your application exits.
@@ -113,7 +113,7 @@ func (e *Exporter) Flush() {
 }
 
 // this replicates StartSpan behavior for testing
-func lightStepSpan(data *export.SpanData) *ls.RawSpan {
+func lightStepSpan(data *trace.SpanData) *ls.RawSpan {
 	spanContext := ls.SpanContext{
 		TraceID: convertTraceID(data.SpanContext.TraceID),
 		SpanID:  convertSpanID(data.SpanContext.SpanID),
@@ -138,7 +138,7 @@ func convertSpanID(id core.SpanID) uint64 {
 	return binary.BigEndian.Uint64(id[:])
 }
 
-func toLogRecords(input []export.Event) []opentracing.LogRecord {
+func toLogRecords(input []trace.Event) []opentracing.LogRecord {
 	output := make([]opentracing.LogRecord, 0, len(input))
 	for _, l := range input {
 		output = append(output, toLogRecord(l))
@@ -154,7 +154,7 @@ func toTags(input []core.KeyValue) map[string]interface{} {
 	return output
 }
 
-func toLogRecord(ev export.Event) opentracing.LogRecord {
+func toLogRecord(ev trace.Event) opentracing.LogRecord {
 	return opentracing.LogRecord{
 		Timestamp: ev.Time,
 		Fields:    toFields(ev.Attributes),

@@ -7,7 +7,7 @@ import (
 	ls "github.com/lightstep/lightstep-tracer-go"
 	"github.com/stretchr/testify/assert"
 	"go.opentelemetry.io/otel/api/core"
-	"go.opentelemetry.io/otel/sdk/export"
+	"go.opentelemetry.io/otel/sdk/export/trace"
 )
 
 func TestExport(t *testing.T) {
@@ -21,12 +21,12 @@ func TestExport(t *testing.T) {
 
 	tests := []struct {
 		name string
-		data *export.SpanData
+		data *trace.SpanData
 		want *ls.RawSpan
 	}{
 		{
 			name: "root span",
-			data: &export.SpanData{
+			data: &trace.SpanData{
 				SpanContext: core.SpanContext{
 					TraceID: traceID,
 					SpanID:  spanID,
