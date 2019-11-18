@@ -7,7 +7,7 @@ import (
 	ls "github.com/lightstep/lightstep-tracer-go"
 	"github.com/stretchr/testify/assert"
 	"go.opentelemetry.io/otel/api/core"
-	"go.opentelemetry.io/otel/sdk/export"
+	"go.opentelemetry.io/otel/sdk/export/trace"
 )
 
 func TestExport(t *testing.T) {
@@ -16,17 +16,17 @@ func TestExport(t *testing.T) {
 	traceID, _ := core.TraceIDFromHex("0102030405060708090a0b0c0d0e0f10")
 	spanID, _ := core.SpanIDFromHex("0102030405060708")
 
-	expectedTraceID := uint64(1731642887311460360)
-	expectedSpanID := uint64(578437695752307201)
+	expectedTraceID := uint64(0x102030405060708)
+	expectedSpanID := uint64(0x102030405060708)
 
 	tests := []struct {
 		name string
-		data *export.SpanData
+		data *trace.SpanData
 		want *ls.RawSpan
 	}{
 		{
 			name: "root span",
-			data: &export.SpanData{
+			data: &trace.SpanData{
 				SpanContext: core.SpanContext{
 					TraceID: traceID,
 					SpanID:  spanID,
@@ -49,9 +49,9 @@ func TestExport(t *testing.T) {
 
 	for _, test := range tests {
 		lsSpan := lightStepSpan(test.data)
-		assert.EqualValues(lsSpan.Operation, test.want.Operation)
-		assert.EqualValues(lsSpan.Context.SpanID, test.want.Context.SpanID)
-		assert.EqualValues(lsSpan.Context.TraceID, test.want.Context.TraceID)
-		assert.EqualValues(lsSpan.ParentSpanID, 0)
+		assert.EqualValues(test.want.Operation, lsSpan.Operation)
+		assert.EqualValues(test.want.Context.SpanID, lsSpan.Context.SpanID)
+		assert.EqualValues(test.want.Context.TraceID, lsSpan.Context.TraceID)
+		assert.EqualValues(0, lsSpan.ParentSpanID)
 	}
 }
