@@ -45,6 +45,13 @@ func WithServiceName(serviceName string) Option {
 	}
 }
 
+
+func WithPlainText(pt bool) Option {
+	return func(c *config) {
+		c.options.Collector.Plaintext = pt
+	}
+}
+
 type config struct {
 	options ls.Options
 }
