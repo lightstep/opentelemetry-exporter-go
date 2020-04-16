@@ -60,6 +60,7 @@ func WithServiceVersion(serviceVersion string) Option {
 func WithPlainText(pt bool) Option {
 	return func(c *config) {
 		c.options.Collector.Plaintext = pt
+		c.options.SystemMetrics.Endpoint.Plaintext = pt
 	}
 }
 

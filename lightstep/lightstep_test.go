@@ -112,3 +112,20 @@ func TestWithServiceName(t *testing.T) {
 
 	assert.EqualValues(serviceName, config.options.Tags[ls.ComponentNameKey])
 }
+
+func TestWithPlainText(t *testing.T) {
+	assert := assert.New(t)
+
+	tests := []bool{
+		true,
+		false,
+	}
+
+	for _, test := range tests {
+		config := newConfig(
+			WithPlainText(test),
+		)
+		assert.EqualValues(test, config.options.Collector.Plaintext)
+		assert.EqualValues(test, config.options.SystemMetrics.Endpoint.Plaintext)
+	}
+}
