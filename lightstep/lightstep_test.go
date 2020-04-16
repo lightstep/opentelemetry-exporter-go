@@ -145,3 +145,21 @@ func TestSystemMetricsDisabled(t *testing.T) {
 		assert.EqualValues(test, config.options.SystemMetrics.Disabled)
 	}
 }
+
+func TestWithSystemMetricTimeout(t *testing.T) {
+	assert := assert.New(t)
+
+	tests := []time.Duration{
+		1 * time.Second,
+		2 * time.Minute,
+		3 * time.Hour,
+	}
+
+	for _, timeout := range tests {
+		config := newConfig(
+			WithSystemMetricTimeout(timeout),
+		)
+
+		assert.EqualValues(timeout, config.options.SystemMetrics.Timeout)
+	}
+}

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/binary"
 	"sync"
+	"time"
 
 	"github.com/opentracing/opentracing-go/log"
 
@@ -80,6 +81,14 @@ func WithPlainText(pt bool) Option {
 func WithSystemMetricsDisabled(disabled bool) Option {
 	return func(c *config) {
 		c.options.SystemMetrics.Disabled = disabled
+	}
+}
+
+// WithSystemMetricTimeout sets the tineout duration for sending metrics
+// reports to the LightStep application.
+func WithSystemMetricTimeout(timeout time.Duration) Option {
+	return func(c *config) {
+		c.options.SystemMetrics.Timeout = timeout
 	}
 }
 
