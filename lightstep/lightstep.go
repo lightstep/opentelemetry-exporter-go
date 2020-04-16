@@ -26,12 +26,14 @@ func WithAccessToken(accessToken string) Option {
 func WithHost(host string) Option {
 	return func(c *config) {
 		c.options.Collector.Host = host
+		c.options.SystemMetrics.Endpoint.Host = host
 	}
 }
 
 func WithPort(port int) Option {
 	return func(c *config) {
 		c.options.Collector.Port = port
+		c.options.SystemMetrics.Endpoint.Port = port
 	}
 }
 
@@ -44,7 +46,6 @@ func WithServiceName(serviceName string) Option {
 		c.options.Tags[ls.ComponentNameKey] = serviceName
 	}
 }
-
 
 func WithPlainText(pt bool) Option {
 	return func(c *config) {
