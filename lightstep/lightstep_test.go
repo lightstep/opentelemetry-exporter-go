@@ -129,3 +129,19 @@ func TestWithPlainText(t *testing.T) {
 		assert.EqualValues(test, config.options.SystemMetrics.Endpoint.Plaintext)
 	}
 }
+
+func TestSystemMetricsDisabled(t *testing.T) {
+	assert := assert.New(t)
+
+	tests := []bool{
+		true,
+		false,
+	}
+
+	for _, test := range tests {
+		config := newConfig(
+			WithSystemMetricsDisabled(test),
+		)
+		assert.EqualValues(test, config.options.SystemMetrics.Disabled)
+	}
+}

@@ -75,6 +75,14 @@ func WithPlainText(pt bool) Option {
 	}
 }
 
+// WithSystemMetricsDisabled determines if system metrics are disabled or not.
+// Default is false.
+func WithSystemMetricsDisabled(disabled bool) Option {
+	return func(c *config) {
+		c.options.SystemMetrics.Disabled = disabled
+	}
+}
+
 type config struct {
 	options ls.Options
 }
