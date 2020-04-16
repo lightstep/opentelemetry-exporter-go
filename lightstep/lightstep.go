@@ -47,6 +47,16 @@ func WithServiceName(serviceName string) Option {
 	}
 }
 
+func WithServiceVersion(serviceVersion string) Option {
+	return func(c *config) {
+		if c.options.Tags == nil {
+			c.options.Tags = make(map[string]interface{})
+		}
+
+		c.options.Tags[ls.ServiceVersionKey] = serviceVersion
+	}
+}
+
 func WithPlainText(pt bool) Option {
 	return func(c *config) {
 		c.options.Collector.Plaintext = pt
