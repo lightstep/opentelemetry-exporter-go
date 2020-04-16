@@ -15,14 +15,18 @@ import (
 	ls "github.com/lightstep/lightstep-tracer-go"
 )
 
+// Option struct is used to configre the LightStepExpoter options.
 type Option func(*config)
 
+// WithAccessToken sets the LightStep access token used to authenticate and associate data.
+// with a LightStep project
 func WithAccessToken(accessToken string) Option {
 	return func(c *config) {
 		c.options.AccessToken = accessToken
 	}
 }
 
+// WithHost sets the URL hostname for sending data to LightStep satellites.
 func WithHost(host string) Option {
 	return func(c *config) {
 		c.options.Collector.Host = host
@@ -30,6 +34,7 @@ func WithHost(host string) Option {
 	}
 }
 
+// WithPort sets the URL port for sending data to LightStep satellites.
 func WithPort(port int) Option {
 	return func(c *config) {
 		c.options.Collector.Port = port
@@ -37,6 +42,8 @@ func WithPort(port int) Option {
 	}
 }
 
+// WithServiceName sets the service name tag used to identify a service in
+// the LightStep application.
 func WithServiceName(serviceName string) Option {
 	return func(c *config) {
 		if c.options.Tags == nil {
@@ -47,6 +54,8 @@ func WithServiceName(serviceName string) Option {
 	}
 }
 
+// WithServiceVersion sets the service version used to identify a service's
+// version in the LightStep application.
 func WithServiceVersion(serviceVersion string) Option {
 	return func(c *config) {
 		if c.options.Tags == nil {
@@ -57,6 +66,8 @@ func WithServiceVersion(serviceVersion string) Option {
 	}
 }
 
+// WithPlainText indicates if data should be sent in plaintext to the LightStep
+// Satelites. Default is false.
 func WithPlainText(pt bool) Option {
 	return func(c *config) {
 		c.options.Collector.Plaintext = pt
