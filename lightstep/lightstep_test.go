@@ -163,3 +163,21 @@ func TestWithSystemMetricTimeout(t *testing.T) {
 		assert.EqualValues(timeout, config.options.SystemMetrics.Timeout)
 	}
 }
+
+func TestWithSystemMetricMeasurementFrequency(t *testing.T) {
+	assert := assert.New(t)
+
+	tests := []time.Duration{
+		1 * time.Second,
+		2 * time.Minute,
+		3 * time.Hour,
+	}
+
+	for _, timeout := range tests {
+		config := newConfig(
+			WithSystemMetricMeasurementFrequency(timeout),
+		)
+
+		assert.EqualValues(timeout, config.options.SystemMetrics.MeasurementFrequency)
+	}
+}

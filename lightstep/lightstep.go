@@ -92,6 +92,14 @@ func WithSystemMetricTimeout(timeout time.Duration) Option {
 	}
 }
 
+// WithSystemMetricMeasurementFrequency sets the tineout duration for sending metrics
+// reports to the LightStep application.
+func WithSystemMetricMeasurementFrequency(frequency time.Duration) Option {
+	return func(c *config) {
+		c.options.SystemMetrics.MeasurementFrequency = frequency
+	}
+}
+
 type config struct {
 	options ls.Options
 }
