@@ -55,3 +55,129 @@ func TestExport(t *testing.T) {
 		assert.EqualValues(0, lsSpan.ParentSpanID)
 	}
 }
+
+func TestWithServiceVersion(t *testing.T) {
+	assert := assert.New(t)
+
+	serviceVersion := "1.0.0"
+	config := newConfig(
+		WithServiceVersion(serviceVersion),
+	)
+
+	assert.EqualValues(serviceVersion, config.options.Tags[ls.ServiceVersionKey])
+}
+
+func TestWithHost(t *testing.T) {
+	assert := assert.New(t)
+
+	host := "my.host.com"
+	config := newConfig(
+		WithHost(host),
+	)
+
+	assert.EqualValues(host, config.options.Collector.Host)
+	assert.EqualValues(host, config.options.SystemMetrics.Endpoint.Host)
+}
+
+func TestWithPort(t *testing.T) {
+	assert := assert.New(t)
+
+	port := 123
+	config := newConfig(
+		WithPort(port),
+	)
+
+	assert.EqualValues(port, config.options.Collector.Port)
+	assert.EqualValues(port, config.options.SystemMetrics.Endpoint.Port)
+}
+
+func TestWithAccessToken(t *testing.T) {
+	assert := assert.New(t)
+
+	token := "my-token"
+	config := newConfig(
+		WithAccessToken(token),
+	)
+
+	assert.EqualValues(token, config.options.AccessToken)
+}
+
+func TestWithServiceName(t *testing.T) {
+	assert := assert.New(t)
+
+	serviceName := "my-token"
+	config := newConfig(
+		WithServiceName(serviceName),
+	)
+
+	assert.EqualValues(serviceName, config.options.Tags[ls.ComponentNameKey])
+}
+
+func TestWithPlainText(t *testing.T) {
+	assert := assert.New(t)
+
+	tests := []bool{
+		true,
+		false,
+	}
+
+	for _, test := range tests {
+		config := newConfig(
+			WithPlainText(test),
+		)
+		assert.EqualValues(test, config.options.Collector.Plaintext)
+		assert.EqualValues(test, config.options.SystemMetrics.Endpoint.Plaintext)
+	}
+}
+
+func TestSystemMetricsDisabled(t *testing.T) {
+	assert := assert.New(t)
+
+	tests := []bool{
+		true,
+		false,
+	}
+
+	for _, test := range tests {
+		config := newConfig(
+			WithSystemMetricsDisabled(test),
+		)
+		assert.EqualValues(test, config.options.SystemMetrics.Disabled)
+	}
+}
+
+func TestWithSystemMetricTimeout(t *testing.T) {
+	assert := assert.New(t)
+
+	tests := []time.Duration{
+		1 * time.Second,
+		2 * time.Minute,
+		3 * time.Hour,
+	}
+
+	for _, timeout := range tests {
+		config := newConfig(
+			WithSystemMetricTimeout(timeout),
+		)
+
+		assert.EqualValues(timeout, config.options.SystemMetrics.Timeout)
+	}
+}
+
+func TestWithSystemMetricMeasurementFrequency(t *testing.T) {
+	assert := assert.New(t)
+
+	tests := []time.Duration{
+		1 * time.Second,
+		2 * time.Minute,
+		3 * time.Hour,
+	}
+
+	for _, timeout := range tests {
+		config := newConfig(
+			WithSystemMetricMeasurementFrequency(timeout),
+		)
+
+		assert.EqualValues(timeout, config.options.SystemMetrics.MeasurementFrequency)
+	}
+}
