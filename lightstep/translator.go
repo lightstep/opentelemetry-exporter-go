@@ -81,6 +81,34 @@ func createOTelAttributes(attributes *tracepb.Span_Attributes) []core.KeyValue {
 	return oTelAttrs
 }
 
+// // Create []trace.Event from OC TimeEvents
+func createOTelEvents(spanEvents *tracepb.Span_TimeEvents) []trace.Event {
+	if spanEvents == nil {
+		return nil
+	}
+
+	annotations := 0
+	for _, event := range spanEvents.TimeEvent {
+		if annotation := event.GetAnnotation(); annotation != nil {
+			annotations++
+		}
+	}
+
+	events := make([]trace.Event, annotations)
+
+	for i, event := range spanEvents.TimeEvent {
+		if annotation := event.GetAnnotation(); annotation != nil {
+			events[i] = trace.Event{
+				Time:       timestampToTime(event.GetTime()),
+				Name:       annotation.GetDescription().GetValue(),
+				Attributes: createOTelAttributes(annotation.GetAttributes()),
+			}
+		}
+	}
+
+	return events
+}
+
 // Create Span Links (including their attributes) from an OC Span
 func createSpanLinks(spanLinks *tracepb.Span_Links) []apitrace.Link {
 	if spanLinks == nil {
@@ -148,6 +176,7 @@ func OCProtoSpanToOTelSpanData(span *tracepb.Span) (*trace.SpanData, error) {
 	spanData.ChildSpanCount = int(span.GetChildSpanCount().GetValue())
 	spanData.Links = createSpanLinks(span.GetLinks())
 	spanData.Attributes = createOTelAttributes(span.GetAttributes())
+	spanData.MessageEvents = createOTelEvents(span.GetTimeEvents())
 	spanData.StartTime = timestampToTime(span.GetStartTime())
 	spanData.EndTime = timestampToTime(span.GetEndTime())
 	spanData.DroppedLinkCount = getDroppedLinkCount(span.GetLinks())
