@@ -8,7 +8,8 @@ import (
 
 	"github.com/opentracing/opentracing-go/log"
 
-	"go.opentelemetry.io/otel/api/core"
+	"go.opentelemetry.io/otel/api/kv"
+	apitrace "go.opentelemetry.io/otel/api/trace"
 	"go.opentelemetry.io/otel/sdk/export/trace"
 
 	"github.com/opentracing/opentracing-go"
@@ -185,11 +186,11 @@ func lightStepSpan(data *trace.SpanData) *ls.RawSpan {
 	return lsSpan
 }
 
-func convertTraceID(id core.TraceID) uint64 {
+func convertTraceID(id apitrace.ID) uint64 {
 	return binary.BigEndian.Uint64(id[:8])
 }
 
-func convertSpanID(id core.SpanID) uint64 {
+func convertSpanID(id apitrace.SpanID) uint64 {
 	return binary.BigEndian.Uint64(id[:])
 }
 
@@ -201,7 +202,7 @@ func toLogRecords(input []trace.Event) []opentracing.LogRecord {
 	return output
 }
 
-func toTags(input []core.KeyValue) map[string]interface{} {
+func toTags(input []kv.KeyValue) map[string]interface{} {
 	output := make(map[string]interface{})
 	for _, value := range input {
 		output[string(value.Key)] = value.Value.AsInterface()
@@ -216,7 +217,7 @@ func toLogRecord(ev trace.Event) opentracing.LogRecord {
 	}
 }
 
-func toFields(input []core.KeyValue) []log.Field {
+func toFields(input []kv.KeyValue) []log.Field {
 	output := make([]log.Field, 0, len(input))
 	for _, value := range input {
 		output = append(output, log.Object(string(value.Key), value.Value.AsInterface()))

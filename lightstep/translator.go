@@ -8,7 +8,7 @@ import (
 
 	tracepb "github.com/census-instrumentation/opencensus-proto/gen-go/trace/v1"
 	"github.com/golang/protobuf/ptypes/timestamp"
-	"go.opentelemetry.io/otel/api/core"
+	"go.opentelemetry.io/otel/api/kv"
 	apitrace "go.opentelemetry.io/otel/api/trace"
 	"go.opentelemetry.io/otel/sdk/export/trace"
 )
@@ -40,8 +40,8 @@ func oTelSpanKind(kind tracepb.Span_SpanKind) apitrace.SpanKind {
 // Creates an OpenTelemetry SpanContext from information in an OC Span.
 // Note that the OC Span has no equivalent to TraceFlags field in the
 // OpenTelemetry SpanContext type.
-func spanContext(traceID []byte, spanID []byte) core.SpanContext {
-	ctx := core.SpanContext{}
+func spanContext(traceID []byte, spanID []byte) apitrace.SpanContext {
+	ctx := apitrace.SpanContext{}
 	if traceID != nil {
 		copy(ctx.TraceID[:], traceID[:])
 	}
@@ -51,28 +51,27 @@ func spanContext(traceID []byte, spanID []byte) core.SpanContext {
 	return ctx
 }
 
-// Create []core.KeyValue attributes from an OC *Span_Attributes
-func createOTelAttributes(attributes *tracepb.Span_Attributes) []core.KeyValue {
+// Create []kv.KeyValue attributes from an OC *Span_Attributes
+func createOTelAttributes(attributes *tracepb.Span_Attributes) []kv.KeyValue {
 	if attributes == nil || attributes.AttributeMap == nil {
 		return nil
 	}
 
-	oTelAttrs := make([]core.KeyValue, len(attributes.AttributeMap))
+	oTelAttrs := make([]kv.KeyValue, len(attributes.AttributeMap))
 
 	i := 0
 	for key, attributeValue := range attributes.AttributeMap {
-		keyValue := core.KeyValue{
-			Key: core.Key(key),
-		}
+		var keyValue kv.KeyValue
+		key := kv.Key(key)
 		switch value := attributeValue.Value.(type) {
 		case *tracepb.AttributeValue_StringValue:
-			keyValue.Value = core.String(attributeValueAsString(attributeValue))
+			keyValue = key.String(attributeValueAsString(attributeValue))
 		case *tracepb.AttributeValue_BoolValue:
-			keyValue.Value = core.Bool(value.BoolValue)
+			keyValue = key.Bool(value.BoolValue)
 		case *tracepb.AttributeValue_IntValue:
-			keyValue.Value = core.Int64(value.IntValue)
+			keyValue = key.Int64(value.IntValue)
 		case *tracepb.AttributeValue_DoubleValue:
-			keyValue.Value = core.Float64(value.DoubleValue)
+			keyValue = key.Float64(value.DoubleValue)
 		}
 		oTelAttrs[i] = keyValue
 		i++
