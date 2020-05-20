@@ -4,16 +4,15 @@ package lightstep
 
 import (
 	"errors"
-	"go.opentelemetry.io/otel/sdk/resource"
 	"time"
+
+	"go.opentelemetry.io/otel/sdk/resource"
 
 	tracepb "github.com/census-instrumentation/opencensus-proto/gen-go/trace/v1"
 	"github.com/golang/protobuf/ptypes/timestamp"
 	"go.opentelemetry.io/otel/api/kv"
 	apitrace "go.opentelemetry.io/otel/api/trace"
 	"go.opentelemetry.io/otel/sdk/export/trace"
-
-	"go.opentelemetry.io/otel/api/key"
 )
 
 // timestampToTime creates a Go time.Time value from a Google protobuf Timestamp.
@@ -96,6 +95,10 @@ func createOTelEvents(spanEvents *tracepb.Span_TimeEvents) []trace.Event {
 		}
 	}
 
+	if annotations == 0 {
+		return nil
+	}
+
 	events := make([]trace.Event, annotations)
 
 	for i, event := range spanEvents.TimeEvent {
@@ -166,10 +169,10 @@ func spanResource(span *tracepb.Span) *resource.Resource {
 	if span.Resource == nil {
 		return nil
 	}
-	attrs := make([]core.KeyValue, len(span.Resource.Labels))
+	attrs := make([]kv.KeyValue, len(span.Resource.Labels))
 	i := 0
 	for k, v := range span.Resource.Labels {
-		attrs[i] = key.String(k, v)
+		attrs[i] = kv.String(k, v)
 		i++
 	}
 	return resource.New(attrs...)
