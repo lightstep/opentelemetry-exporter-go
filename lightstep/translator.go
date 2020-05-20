@@ -4,6 +4,7 @@ package lightstep
 
 import (
 	"errors"
+	"go.opentelemetry.io/otel/sdk/resource"
 	"time"
 
 	tracepb "github.com/census-instrumentation/opencensus-proto/gen-go/trace/v1"
@@ -11,6 +12,8 @@ import (
 	"go.opentelemetry.io/otel/api/kv"
 	apitrace "go.opentelemetry.io/otel/api/trace"
 	"go.opentelemetry.io/otel/sdk/export/trace"
+
+	"go.opentelemetry.io/otel/api/key"
 )
 
 // timestampToTime creates a Go time.Time value from a Google protobuf Timestamp.
@@ -159,6 +162,19 @@ func getSpanName(span *tracepb.Span) string {
 	return ""
 }
 
+func spanResource(span *tracepb.Span) *resource.Resource {
+	if span.Resource == nil {
+		return nil
+	}
+	attrs := make([]core.KeyValue, len(span.Resource.Labels))
+	i := 0
+	for k, v := range span.Resource.Labels {
+		attrs[i] = key.String(k, v)
+		i++
+	}
+	return resource.New(attrs...)
+}
+
 // OCProtoSpanToOTelSpanData converts an OC Span to an OTel SpanData.
 func OCProtoSpanToOTelSpanData(span *tracepb.Span) (*trace.SpanData, error) {
 	if span == nil {
@@ -180,6 +196,7 @@ func OCProtoSpanToOTelSpanData(span *tracepb.Span) (*trace.SpanData, error) {
 	spanData.EndTime = timestampToTime(span.GetEndTime())
 	spanData.DroppedLinkCount = getDroppedLinkCount(span.GetLinks())
 	spanData.ChildSpanCount = getChildSpanCount(span)
+	spanData.Resource = spanResource(span)
 
 	return spanData, nil
 }
