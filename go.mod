@@ -4,7 +4,7 @@ go 1.13
 
 require (
 	github.com/census-instrumentation/opencensus-proto v0.2.1
-	github.com/gogo/protobuf v1.3.1
+	github.com/golang/protobuf v1.3.5
 	github.com/lightstep/lightstep-tracer-common/golang/gogo v0.0.0-20200310182322-adf4263e074b // indirect
 	github.com/lightstep/lightstep-tracer-go v0.20.0
 	github.com/onsi/ginkgo v1.10.3 // indirect

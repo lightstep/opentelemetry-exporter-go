@@ -9,14 +9,14 @@ import (
 	"go.opentelemetry.io/otel/sdk/resource"
 
 	tracepb "github.com/census-instrumentation/opencensus-proto/gen-go/trace/v1"
-	"github.com/gogo/protobuf/types"
+	"github.com/golang/protobuf/ptypes/timestamp"
 	"go.opentelemetry.io/otel/api/kv"
 	apitrace "go.opentelemetry.io/otel/api/trace"
 	"go.opentelemetry.io/otel/sdk/export/trace"
 )
 
 // timestampToTime creates a Go time.Time value from a Google protobuf Timestamp.
-func timestampToTime(ts *types.Timestamp) (t time.Time) {
+func timestampToTime(ts *timestamp.Timestamp) (t time.Time) {
 	if ts == nil {
 		return
 	}
