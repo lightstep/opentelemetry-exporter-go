@@ -41,3 +41,11 @@ func main() {
 	exporter.Flush()
 }
 ```
+
+## Release
+
+To make a release, do these steps
+1. Run `make ver=X.Y.Z version`
+1. Update CHANGELOG.md
+1. Merge changes
+1. Run `make release_tag`
