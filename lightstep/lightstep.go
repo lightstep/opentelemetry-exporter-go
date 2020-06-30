@@ -186,7 +186,7 @@ func lightStepSpan(data *trace.SpanData) *ls.RawSpan {
 }
 
 func convertTraceID(id core.TraceID) uint64 {
-	return binary.BigEndian.Uint64(id[:8])
+	return binary.BigEndian.Uint64(id[8:])
 }
 
 func convertSpanID(id core.SpanID) uint64 {
