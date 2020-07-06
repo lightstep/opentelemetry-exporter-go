@@ -1,16 +1,28 @@
-# LightStep OpenTelemetry Golang Exporter
+# Lightstep OpenTelemetry Golang Exporter
 
-This is an experimental exporter for opentelemetry-go.
+This is a Lightstep exporter for opentelemetry-go.
 
 ## Initialize
+
+This example connects to Lightstep and sends a single span.
+
 ```go
+package main
+
+import (
+	"context"
+	"log"
+
+	"github.com/lightstep/opentelemetry-exporter-go/lightstep"
+	"go.opentelemetry.io/otel/api/global"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
+)
+
 func main() {
-	exporter, err := lightstep.NewExporter([]lightstep.Option{
-		lightstep.WithAccessToken(<PROJECT_ACCESS_TOKEN>),
-		lightstep.WithHost(<SATELLITE_URL>),
-		lightstep.WithPort(<SATELLITE_PORT>),
+	exporter, err := lightstep.NewExporter(
+		lightstep.WithAccessToken("<ACCESS_TOKEN>"),
 		lightstep.WithServiceName("my-service"),
-	})
+	)
 	if err != nil {
 		log.Fatalf("Failed to initialize Lightstep exporter: %v", err)
 	}
@@ -22,6 +34,18 @@ func main() {
 		sdktrace.WithSyncer(exporter))
 	global.SetTraceProvider(tp)
 
-	[...]
+	ctx := context.Background()
+	_, span := global.Tracer("example").Start(ctx, "hello")
+	span.End()
+
+	exporter.Flush()
 }
 ```
+
+## Release
+
+To make a release, do these steps
+1. Run `make ver=X.Y.Z version`
+1. Update CHANGELOG.md
+1. Merge changes
+1. Run `make release_tag`

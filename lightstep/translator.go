@@ -6,9 +6,11 @@ import (
 	"errors"
 	"time"
 
+	"go.opentelemetry.io/otel/sdk/resource"
+
 	tracepb "github.com/census-instrumentation/opencensus-proto/gen-go/trace/v1"
 	"github.com/golang/protobuf/ptypes/timestamp"
-	"go.opentelemetry.io/otel/api/core"
+	"go.opentelemetry.io/otel/api/kv"
 	apitrace "go.opentelemetry.io/otel/api/trace"
 	"go.opentelemetry.io/otel/sdk/export/trace"
 )
@@ -40,8 +42,8 @@ func oTelSpanKind(kind tracepb.Span_SpanKind) apitrace.SpanKind {
 // Creates an OpenTelemetry SpanContext from information in an OC Span.
 // Note that the OC Span has no equivalent to TraceFlags field in the
 // OpenTelemetry SpanContext type.
-func spanContext(traceID []byte, spanID []byte) core.SpanContext {
-	ctx := core.SpanContext{}
+func spanContext(traceID []byte, spanID []byte) apitrace.SpanContext {
+	ctx := apitrace.SpanContext{}
 	if traceID != nil {
 		copy(ctx.TraceID[:], traceID[:])
 	}
@@ -51,34 +53,65 @@ func spanContext(traceID []byte, spanID []byte) core.SpanContext {
 	return ctx
 }
 
-// Create []core.KeyValue attributes from an OC *Span_Attributes
-func createOTelAttributes(attributes *tracepb.Span_Attributes) []core.KeyValue {
+// Create []kv.KeyValue attributes from an OC *Span_Attributes
+func createOTelAttributes(attributes *tracepb.Span_Attributes) []kv.KeyValue {
 	if attributes == nil || attributes.AttributeMap == nil {
 		return nil
 	}
 
-	oTelAttrs := make([]core.KeyValue, len(attributes.AttributeMap))
+	oTelAttrs := make([]kv.KeyValue, len(attributes.AttributeMap))
 
 	i := 0
 	for key, attributeValue := range attributes.AttributeMap {
-		keyValue := core.KeyValue{
-			Key: core.Key(key),
-		}
+		var keyValue kv.KeyValue
+		key := kv.Key(key)
 		switch value := attributeValue.Value.(type) {
 		case *tracepb.AttributeValue_StringValue:
-			keyValue.Value = core.String(attributeValueAsString(attributeValue))
+			keyValue = key.String(attributeValueAsString(attributeValue))
 		case *tracepb.AttributeValue_BoolValue:
-			keyValue.Value = core.Bool(value.BoolValue)
+			keyValue = key.Bool(value.BoolValue)
 		case *tracepb.AttributeValue_IntValue:
-			keyValue.Value = core.Int64(value.IntValue)
+			keyValue = key.Int64(value.IntValue)
 		case *tracepb.AttributeValue_DoubleValue:
-			keyValue.Value = core.Float64(value.DoubleValue)
+			keyValue = key.Float64(value.DoubleValue)
 		}
 		oTelAttrs[i] = keyValue
 		i++
 	}
 
 	return oTelAttrs
+}
+
+// // Create []trace.Event from OC TimeEvents
+func createOTelEvents(spanEvents *tracepb.Span_TimeEvents) []trace.Event {
+	if spanEvents == nil {
+		return nil
+	}
+
+	annotations := 0
+	for _, event := range spanEvents.TimeEvent {
+		if annotation := event.GetAnnotation(); annotation != nil {
+			annotations++
+		}
+	}
+
+	if annotations == 0 {
+		return nil
+	}
+
+	events := make([]trace.Event, annotations)
+
+	for i, event := range spanEvents.TimeEvent {
+		if annotation := event.GetAnnotation(); annotation != nil {
+			events[i] = trace.Event{
+				Time:       timestampToTime(event.GetTime()),
+				Name:       annotation.GetDescription().GetValue(),
+				Attributes: createOTelAttributes(annotation.GetAttributes()),
+			}
+		}
+	}
+
+	return events
 }
 
 // Create Span Links (including their attributes) from an OC Span
@@ -132,6 +165,19 @@ func getSpanName(span *tracepb.Span) string {
 	return ""
 }
 
+func spanResource(span *tracepb.Span) *resource.Resource {
+	if span.Resource == nil {
+		return nil
+	}
+	attrs := make([]kv.KeyValue, len(span.Resource.Labels))
+	i := 0
+	for k, v := range span.Resource.Labels {
+		attrs[i] = kv.String(k, v)
+		i++
+	}
+	return resource.New(attrs...)
+}
+
 // OCProtoSpanToOTelSpanData converts an OC Span to an OTel SpanData.
 func OCProtoSpanToOTelSpanData(span *tracepb.Span) (*trace.SpanData, error) {
 	if span == nil {
@@ -148,10 +194,12 @@ func OCProtoSpanToOTelSpanData(span *tracepb.Span) (*trace.SpanData, error) {
 	spanData.ChildSpanCount = int(span.GetChildSpanCount().GetValue())
 	spanData.Links = createSpanLinks(span.GetLinks())
 	spanData.Attributes = createOTelAttributes(span.GetAttributes())
+	spanData.MessageEvents = createOTelEvents(span.GetTimeEvents())
 	spanData.StartTime = timestampToTime(span.GetStartTime())
 	spanData.EndTime = timestampToTime(span.GetEndTime())
 	spanData.DroppedLinkCount = getDroppedLinkCount(span.GetLinks())
 	spanData.ChildSpanCount = getChildSpanCount(span)
+	spanData.Resource = spanResource(span)
 
 	return spanData, nil
 }

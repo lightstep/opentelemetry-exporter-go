@@ -5,16 +5,21 @@ import (
 	"time"
 
 	ls "github.com/lightstep/lightstep-tracer-go"
+	"github.com/opentracing/opentracing-go"
+	"github.com/opentracing/opentracing-go/log"
 	"github.com/stretchr/testify/assert"
-	"go.opentelemetry.io/otel/api/core"
+	"go.opentelemetry.io/otel/api/kv"
+	apitrace "go.opentelemetry.io/otel/api/trace"
 	"go.opentelemetry.io/otel/sdk/export/trace"
+	"go.opentelemetry.io/otel/sdk/resource"
 )
 
 func TestExport(t *testing.T) {
 	assert := assert.New(t)
 	now := time.Now().Round(time.Microsecond)
-	traceID, _ := core.TraceIDFromHex("0102030405060708090a0b0c0d0e0f10")
-	spanID, _ := core.SpanIDFromHex("0102030405060708")
+
+	traceID, _ := apitrace.IDFromHex("0102030405060708090a0b0c0d0e0f10")
+	spanID, _ := apitrace.SpanIDFromHex("0102030405060708")
 
 	expectedTraceID := uint64(0x102030405060708)
 	expectedSpanID := uint64(0x102030405060708)
@@ -27,13 +32,20 @@ func TestExport(t *testing.T) {
 		{
 			name: "root span",
 			data: &trace.SpanData{
-				SpanContext: core.SpanContext{
+				SpanContext: apitrace.SpanContext{
 					TraceID: traceID,
 					SpanID:  spanID,
 				},
 				Name:      "/test",
 				StartTime: now,
 				EndTime:   now,
+				Resource: resource.New(
+					kv.String("R1", "V1"),
+				),
+				Attributes: []kv.KeyValue{
+					kv.String("A", "B"),
+					kv.String("C", "D"),
+				},
 			},
 			want: &ls.RawSpan{
 				Context: ls.SpanContext{
@@ -43,16 +55,63 @@ func TestExport(t *testing.T) {
 				Operation: "/test",
 				Start:     now,
 				Duration:  0,
+				Tags: opentracing.Tags{
+					"A":  "B",
+					"C":  "D",
+					"R1": "V1",
+				},
+			},
+		},
+		{
+			name: "with events",
+			data: &trace.SpanData{
+				SpanContext: apitrace.SpanContext{
+					TraceID: traceID,
+					SpanID:  spanID,
+				},
+				Name:      "/test",
+				StartTime: now,
+				EndTime:   now,
+				MessageEvents: []trace.Event{
+					trace.Event{
+						Name: "myevent",
+						Attributes: []kv.KeyValue{
+							kv.String("A", "B"),
+						},
+						Time: now,
+					},
+				},
+				Resource: resource.New(
+					kv.String("R1", "V1"),
+				),
+			},
+			want: &ls.RawSpan{
+				Context: ls.SpanContext{
+					TraceID: expectedTraceID,
+					SpanID:  expectedSpanID,
+				},
+				Operation: "/test",
+				Start:     now,
+				Duration:  0,
+				Tags: opentracing.Tags{
+					"R1": "V1",
+				},
+				Logs: []opentracing.LogRecord{
+					opentracing.LogRecord{
+						Timestamp: now,
+						Fields: []log.Field{
+							log.String("name", "myevent"),
+							log.Object("A", "B"),
+						},
+					},
+				},
 			},
 		},
 	}
 
 	for _, test := range tests {
 		lsSpan := lightStepSpan(test.data)
-		assert.EqualValues(test.want.Operation, lsSpan.Operation)
-		assert.EqualValues(test.want.Context.SpanID, lsSpan.Context.SpanID)
-		assert.EqualValues(test.want.Context.TraceID, lsSpan.Context.TraceID)
-		assert.EqualValues(0, lsSpan.ParentSpanID)
+		assert.EqualValues(test.want, lsSpan)
 	}
 }
 

@@ -8,8 +8,10 @@ import (
 
 	"github.com/opentracing/opentracing-go/log"
 
-	"go.opentelemetry.io/otel/api/core"
+	"go.opentelemetry.io/otel/api/kv"
+	apitrace "go.opentelemetry.io/otel/api/trace"
 	"go.opentelemetry.io/otel/sdk/export/trace"
+	"go.opentelemetry.io/otel/sdk/resource"
 
 	"github.com/opentracing/opentracing-go"
 
@@ -144,7 +146,7 @@ func (e *Exporter) ExportSpan(ctx context.Context, data *trace.SpanData) {
 		ls.SetSpanID(convertSpanID(data.SpanContext.SpanID)),
 		ls.SetParentSpanID(convertSpanID(data.ParentSpanID)),
 		opentracing.StartTime(data.StartTime),
-		opentracing.Tags(toTags(data.Attributes)),
+		opentracing.Tags(toTags(data.Attributes, data.Resource)),
 	).FinishWithOptions(
 		opentracing.FinishOptions{
 			FinishTime: data.EndTime,
@@ -173,12 +175,14 @@ func lightStepSpan(data *trace.SpanData) *ls.RawSpan {
 		TraceID: convertTraceID(data.SpanContext.TraceID),
 		SpanID:  convertSpanID(data.SpanContext.SpanID),
 	}
+	tags := toTags(data.Attributes, data.Resource)
+
 	lsSpan := &ls.RawSpan{
 		Context:      spanContext,
 		ParentSpanID: convertSpanID(data.ParentSpanID),
 		Operation:    data.Name,
 		Start:        data.StartTime,
-		Tags:         toTags(data.Attributes),
+		Tags:         tags,
 		Logs:         toLogRecords(data.MessageEvents),
 	}
 	lsSpan.Duration = data.EndTime.Sub(data.StartTime)
@@ -189,11 +193,14 @@ func convertTraceID(id core.TraceID) uint64 {
 	return binary.BigEndian.Uint64(id[8:])
 }
 
-func convertSpanID(id core.SpanID) uint64 {
+func convertSpanID(id apitrace.SpanID) uint64 {
 	return binary.BigEndian.Uint64(id[:])
 }
 
 func toLogRecords(input []trace.Event) []opentracing.LogRecord {
+	if len(input) == 0 {
+		return nil
+	}
 	output := make([]opentracing.LogRecord, 0, len(input))
 	for _, l := range input {
 		output = append(output, toLogRecord(l))
@@ -201,8 +208,12 @@ func toLogRecords(input []trace.Event) []opentracing.LogRecord {
 	return output
 }
 
-func toTags(input []core.KeyValue) map[string]interface{} {
+func toTags(input []kv.KeyValue, resource *resource.Resource) map[string]interface{} {
 	output := make(map[string]interface{})
+	for iter := resource.Iter(); iter.Next(); {
+		kv := iter.Label()
+		output[string(kv.Key)] = kv.Value.Emit()
+	}
 	for _, value := range input {
 		output[string(value.Key)] = value.Value.AsInterface()
 	}
@@ -212,12 +223,13 @@ func toTags(input []core.KeyValue) map[string]interface{} {
 func toLogRecord(ev trace.Event) opentracing.LogRecord {
 	return opentracing.LogRecord{
 		Timestamp: ev.Time,
-		Fields:    toFields(ev.Attributes),
+		Fields:    toFields(ev.Name, ev.Attributes),
 	}
 }
 
-func toFields(input []core.KeyValue) []log.Field {
-	output := make([]log.Field, 0, len(input))
+func toFields(name string, input []kv.KeyValue) []log.Field {
+	output := make([]log.Field, 0, len(input)+1)
+	output = append(output, log.String("name", name))
 	for _, value := range input {
 		output = append(output, log.Object(string(value.Key), value.Value.AsInterface()))
 	}
