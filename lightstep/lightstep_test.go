@@ -21,7 +21,7 @@ func TestExport(t *testing.T) {
 	traceID, _ := apitrace.IDFromHex("0102030405060708090a0b0c0d0e0f10")
 	spanID, _ := apitrace.SpanIDFromHex("0102030405060708")
 
-	expectedTraceID := uint64(0x102030405060708)
+	expectedTraceID := uint64(0x90a0b0c0d0e0f10)
 	expectedSpanID := uint64(0x102030405060708)
 
 	tests := []struct {
