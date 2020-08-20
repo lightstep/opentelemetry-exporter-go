@@ -220,6 +220,15 @@ func TestWithDefaultAttributes(t *testing.T) {
 	}
 }
 
+func TestWithMaxBufferedSpans(t *testing.T) {
+	assert := assert.New(t)
+
+	val := 1500
+	config := newConfig(WithMaxBufferedSpans(val))
+
+	assert.EqualValues(val, config.options.MaxBufferedSpans)
+}
+
 func TestSystemMetricsDisabled(t *testing.T) {
 	assert := assert.New(t)
 
