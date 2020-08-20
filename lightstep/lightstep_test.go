@@ -189,6 +189,37 @@ func TestWithPlainText(t *testing.T) {
 	}
 }
 
+func TestWithDefaultAttributes(t *testing.T) {
+	assert := assert.New(t)
+
+	tests := []struct{
+		attrs Attributes
+	}{
+		{
+			attrs: map[string]interface{}{},
+		},
+		{
+			attrs: map[string]interface{}{
+				"attr1": "val1",
+			},
+		},
+		{
+			attrs: map[string]interface{}{
+				"attr1": true,
+				"attr2": 1234,
+			},
+		},
+	}
+
+	for _, test := range tests {
+		config := newConfig(WithDefaultAttributes(test.attrs))
+
+		for k, v := range test.attrs {
+			assert.EqualValues(v, config.options.Tags[k])
+		}
+	}
+}
+
 func TestSystemMetricsDisabled(t *testing.T) {
 	assert := assert.New(t)
 

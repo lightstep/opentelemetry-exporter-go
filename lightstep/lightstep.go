@@ -18,8 +18,11 @@ import (
 	ls "github.com/lightstep/lightstep-tracer-go"
 )
 
-// Option struct is used to configre the LightStepExpoter options.
+// Option struct is used to configure the LightStepExporter options.
 type Option func(*config)
+
+// Attributes provide extra information in a span
+type Attributes map[string]interface{}
 
 // WithAccessToken sets the LightStep access token used to authenticate and associate data.
 // with a LightStep project
@@ -70,11 +73,24 @@ func WithServiceVersion(serviceVersion string) Option {
 }
 
 // WithPlainText indicates if data should be sent in plaintext to the LightStep
-// Satelites. Default is false.
+// Satellites. Default is false.
 func WithPlainText(pt bool) Option {
 	return func(c *config) {
 		c.options.Collector.Plaintext = pt
 		c.options.SystemMetrics.Endpoint.Plaintext = pt
+	}
+}
+
+// WithDefaultAttributes sets attributes that will be appended to every span that is exported to the trace.
+func WithDefaultAttributes(attrs Attributes) Option {
+	return func(c *config) {
+		if c.options.Tags == nil {
+			c.options.Tags = make(map[string]interface{})
+		}
+
+		for k, v := range attrs {
+			c.options.Tags[k] = v
+		}
 	}
 }
 
@@ -86,7 +102,7 @@ func WithSystemMetricsDisabled(disabled bool) Option {
 	}
 }
 
-// WithSystemMetricTimeout sets the tineout duration for sending metrics
+// WithSystemMetricTimeout sets the timeout duration for sending metrics
 // reports to the LightStep application.
 func WithSystemMetricTimeout(timeout time.Duration) Option {
 	return func(c *config) {
@@ -94,7 +110,7 @@ func WithSystemMetricTimeout(timeout time.Duration) Option {
 	}
 }
 
-// WithSystemMetricMeasurementFrequency sets the tineout duration for sending metrics
+// WithSystemMetricMeasurementFrequency sets the timeout duration for sending metrics
 // reports to the LightStep application.
 func WithSystemMetricMeasurementFrequency(frequency time.Duration) Option {
 	return func(c *config) {
@@ -138,7 +154,7 @@ func NewExporter(opts ...Option) (*Exporter, error) {
 	}, nil
 }
 
-// ExportSpan exports an OpenTelementry SpanData object to an OpenTracing Span on the LightStep tracer.
+// ExportSpan exports an OpenTelemetry SpanData object to an OpenTracing Span on the LightStep tracer.
 func (e *Exporter) ExportSpan(ctx context.Context, data *trace.SpanData) {
 	e.tracer.StartSpan(
 		data.Name,
